@@ -25,28 +25,28 @@ I based my considerations on the following:
 - discussions from other pull requests and my personal linguistic taste.
 
 All above gives us:
-1. **The list consists of 2048 words and is sorted.**
+1. **The list consists of 2048 words and is sorted.**  
 2. **Smart selection of words.** The first 4 letters uniquely determine a word. This is really helpful when going
 through the process of recovering the password with two buttons only. The lower bound, due to the number of characters
 in an alphabet seems to be 3, but it will most likely be not possible to achieve. Especially having in mind other
-constraints. For Polish language it was definitely not possible.
+constraints. For Polish language it was definitely not possible.  
 3. **Word length.** For upper bound I strongly opt for no more than 8, due to the displays limited to 8 characters.
 It also helps to keep full words (not only 4 first letters) in the steel backups. Lower bound set to 4 characters seems
-to be nicely aligned with other constraints.
+to be nicely aligned with other constraints.  
 4. **Character set.** If your language allows it and if possible, I would start with words consisting of English
 characters only. Again, this is due to the steel backups. I was able to achieve it with Polish word list, but I was
 of impression this was one of the hardest constraints to met. It could be loosen up by treating letters with and without
-diacritics as the same. Using Polish example, 'ą' would be treated as 'a' resulting in ... being treatead as ...
+diacritics as the same. Using Polish example, 'ą' would be treated as 'a' resulting in "kąt" being treated as "kat".  
 5. **Similar words avoided.** To be more precise, I would use term 'Levenshtein distance'. Levenshtein distance of ONE
-should not be allowed (unfortunately this rule does not apply to the English word list).
-6. **Common nouns only.** Plural form used only when there is no singular form/singular form is rarely used
+should not be allowed (unfortunately this rule does not apply to the English word list).  
+6. **Common nouns only.** Plural form used only when there is no singular form/singular form is rarely used  
 7. **All words should be manually selected:**
    - they should come from some kind of widely accepted source - I used words from Polish dictionary:
      https://sjp.pl/slownik/odmiany/
    - it is OK if some people especially children would not understand some of them,
-  but it should not 'put in trouble' (no embarrassing words) people who know the meaning and are asked for explanation.
+  but it should not 'put in trouble' (no embarrassing words) people who know the meaning and are asked for explanation.  
 8. **~~No words from other word lists~~** - could be nice feature but I do not think it is feasible. Especially with all
-of those constraints - I very quickly stopped to think about it.
+of those constraints - I very quickly stopped to think about it.  
 
 ## How would I do it (in hindsight)
 
@@ -96,7 +96,8 @@ This list wasn't created with Levenshtein distance in mind thanks to which simil
 
 The English word list is available here: [English word list](https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt)  
 My script generated following CQL for this list: [CQL for English word list](./cql_english)  
-The neo4j graph (about 2.4MB but you may zoom in to see similarities): [neo4j graph for English word list](./graph_english.png)
+The neo4j graph (about 2.4MB - please download and zoom in):  
+![neo4j graph for English word list](./graph_english.png)
 
 
 [March 25, 2019]
