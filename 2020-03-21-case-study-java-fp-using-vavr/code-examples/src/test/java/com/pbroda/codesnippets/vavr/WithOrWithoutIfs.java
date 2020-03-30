@@ -42,8 +42,7 @@ class LabelFilter {
         return Option.of(label)
                 .map(String::toUpperCase)
                 .filter(allowedLabels::contains)
-                .map(__ -> true)
-                .getOrElse(false);
+                .isDefined();
     }
 
     public Either<Throwable, Boolean> filter3(String label) {

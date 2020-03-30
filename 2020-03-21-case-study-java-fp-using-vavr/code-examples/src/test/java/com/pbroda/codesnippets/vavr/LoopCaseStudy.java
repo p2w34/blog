@@ -7,6 +7,7 @@ import io.vavr.collection.Stream;
 import io.vavr.control.Either;
 import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.Accessors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +27,7 @@ class Item {
     UUID id;
 }
 
+@Accessors(fluent = true)
 @Value
 @Builder
 class AvailableItemsResponse {
@@ -46,33 +48,33 @@ interface InventoryService {
     Either<Throwable, Boolean> publishAvailableItems(List<Item> items);
 }
 
-//@Value
-//class ProcessingPipeline {
-//
-//    private final WarehouseService warehouseService;
-//    private final InventoryService inventoryService;
-//
-//    public Either<Throwable, Boolean> processItems() {
-//        AvailableItemsResponse availableItemsResponse;
-//        do {
-//
-//            var fetchResult = warehouseService.fetchAvailableItems();
-//
-//            if (fetchResult.isLeft()) {
-//                return Either.left(fetchResult.getLeft());
-//            }
-//
-//            availableItemsResponse = fetchResult.get();
-//
-//            var publishResult = inventoryService.publishAvailableItems(availableItemsResponse.getItems());
-//            if (publishResult.isLeft()) {
-//                return Either.left(publishResult.getLeft());
-//            }
-//
-//        } while (availableItemsResponse.getHasMore());
-//        return Either.right(true);
-//    }
-//}
+@Value
+class ProcessingPipelineBeforeRefactoring {
+
+    private final WarehouseService warehouseService;
+    private final InventoryService inventoryService;
+
+    public Either<Throwable, Boolean> processItems() {
+        AvailableItemsResponse availableItemsResponse;
+        do {
+
+            var fetchResult = warehouseService.fetchAvailableItems();
+
+            if (fetchResult.isLeft()) {
+                return Either.left(fetchResult.getLeft());
+            }
+
+            availableItemsResponse = fetchResult.get();
+
+            var publishResult = inventoryService.publishAvailableItems(availableItemsResponse.items());
+            if (publishResult.isLeft()) {
+                return Either.left(publishResult.getLeft());
+            }
+
+        } while (availableItemsResponse.hasMore());
+        return Either.right(true);
+    }
+}
 
 @Value
 class ProcessingPipeline {
@@ -84,7 +86,7 @@ class ProcessingPipeline {
         return Stream.continually(() -> fetchAndPublishAvailableItems())
                 .find(this::isLastPage)
                 .get()
-                .map(__ -> true);
+                .map(ignore -> true);
     }
 
     private Either<Throwable, Tuple2<Boolean, Boolean>> fetchAndPublishAvailableItems() {
@@ -93,8 +95,8 @@ class ProcessingPipeline {
     }
 
     private Either<Throwable, Tuple2<Boolean, Boolean>> publishAvailableItems(AvailableItemsResponse itemsResponse) {
-        return inventoryService.publishAvailableItems(itemsResponse.getItems())
-                .map(published -> Tuple.of(published, itemsResponse.getHasMore()));
+        return inventoryService.publishAvailableItems(itemsResponse.items())
+                .map(published -> Tuple.of(published, itemsResponse.hasMore()));
     }
 
     private Boolean isLastPage(Either<Throwable, Tuple2<Boolean, Boolean>> fetchAndPublishResult) {
