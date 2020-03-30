@@ -1,5 +1,7 @@
 # Case study: Java functional programming using Vavr
 
+[Vavr](https://vavr.io) is a functional library for Java 8+ that provides persistent data types and functional control structures. 
+
 Most Vavr tutorials show how to use Vavr primitives but they do not provide intuition on how to write whole applications.
 This is something to be addressed here, by means of examining some of the typical aspects of writing microservices.
 The provided analysis is based on an example that has its roots in professional programming reality.
@@ -10,8 +12,8 @@ A very basic understanding of FP concepts like immutability or pure functions is
 
 # Visualising programs as pipelines
 Before jumping into the promised case study, let's try to plant the seed of the intuition to be developed.
-In FP errors are not thrown as in pure Java are. Instead, they are returned from functions similarly to correct values.
-This allows us to visualize programs as a pipeline, through which flow both correct results as well as errors.  
+In FP errors are not thrown as they would be in pure Java. Instead, they are returned from methods similar to non-error values.
+This allows us to visualize programs as pipelines, through which errors flow alongside non-error results.  
 
 Just one remark here. One might argue whether the word 'pipeline' is appropriate or not.
 Why not simply 'stream'? I find 'pipeline' accurate as streams need to flow through something.
@@ -25,16 +27,16 @@ Have a look at the pictures below:
 They both present programs as pipelines. A single arrow should be interpreted as a single computational stage (for example a single method),
 whereas the colors mean:  
 - green - purely functional (no side effects),  
-- orange - with side effects (especially throwing errors),  
+- orange - with side effects,  
 - red - the flow of errors
 
 The left example shows a purely functional program, meaning none of the pipeline stages performs any side effects.
 It is hard to imagine that such a program could be of any use - no side effects means no printing result on the screen/
-writing to a file, no possibility to input parameters, etc.  
+writing to a file, no possibility to interactively input parameters during execution, etc.  
 
 The example on the right is more interesting - apart from doing purely FP-style calculations,
 it reads user input, calls database service and can display some results on the screen.
-Should any error occur, it will be wrapped (with help of Vavr) into a proper type and returned (not thrown) from a method.
+Should any error occur, it will be wrapped (with the help of Vavr) into a proper type and returned (not thrown) from a method.
 The pipeline, assembled from Vavr primitives, takes care of proper error propagation to the place where the program begins.
 
 Writing programs in FP fashion is nothing more complicated than that.
@@ -57,7 +59,7 @@ Additionally, it leverages S3 to store some basic information about where it pre
 it is useful for both the next service run as well to know from where to continue after crashes.
 
 The exact algorithm describing the service functionality is as follows:
-- get last 'polling status' from S3
+- get latest 'polling status' from S3
 - use it to compose query to the database
 - knowing that database response might consist of multiple pages, for each page (large loop on the picture):
 - request access token and (small loop):
@@ -65,14 +67,13 @@ The exact algorithm describing the service functionality is as follows:
 after each such successful operation, update 'polling status' on S3.
 
 This example is based on a real microservice.
-It is built without any frameworks apart from Guice to provide dependency injection, but this is irrelevant here.
+It is built without any frameworks apart from Guice to provide dependency injection.
 To avoid overcomplication, everything happens in one thread.
 Additionally, error while contacting any of the external services means the pipeline breaks.
 (OK, some failed HTTP calls might be retried two or three times, but if this fails the pipeline breaks.
 This is acceptable - thanks to storing 'polling status' on S3, the next run will continue from the place where previously broke).
 
-All external services are exposed through REST, but it does not matter here.
-What is important is that contacting them is a side effect.
+All external services are exposed through REST, but what truly matters is that contacting them is a side effect.
 
 Having understood the flow of the service, we are ready to analyze some of its crucial parts to learn how Vavr helps in achieving that.
 
@@ -93,7 +94,7 @@ Should an exception be thrown, it will be wrapped into Try, then translated to E
 Let's assume external HTTP calls are done by client implementing the following interface:
 ```
 interface InventoryPublisherClient {
-    Boolean publishItem(ItemData item) throws RuntimeException;
+    Boolean publishItem(ItemData item);
 }
 ```
 Then our wrapper class may simply take the form of:
@@ -123,8 +124,8 @@ We show how to write a loop where the number of iterations is determined by the 
 
 Let's talk about some basics first.  
 Vavr equips us with tools one may find valuable writing such loops.
-These are primitives like Stream.continually(), takeWhile(), dropWhile() and find().
-And their 'brothers and sister' (takeUntil() etc.).  
+These are primitives like ```Stream.continually()```, ```takeWhile()```, ```dropWhile()``` and ```find()```.
+And their 'brothers and sister' (```takeUntil()``` etc.).  
 
 **Now comes a very important thing, crucial to understanding this paragraph.
 The io.vavr.collection.Stream implementation is a lazy linked list.**
@@ -134,31 +135,28 @@ This has very serious consequences which one might observe with following snippe
 testStream = Stream.of(pr1, pr2, pr3, pr4, pr5, pr6);
 testList = List.of(pr1, pr2, pr3, pr4, pr5, pr6);
 
-@Test
-void testFind() {
-    var resultStream = testStream.map(
-            pr -> anyServiceStream.serviceCall(pr) # it returns false for the first three calls, true for the rest
-        )
-        .find(processingResult -> processingResult.isResult() == false);
+    @Test
+    void testFind() {
+        var resultStream = testStream
+                .map(anyServiceStream::serviceCall) // it returns false for the first three calls, true for the rest
+                .find(processingResult -> !processingResult.isSuccessful());
 
-    var resultList = testList.map(
-            pr -> anyServiceList.serviceCall(pr) # it returns false for the first three calls, true for the rest
-        )
-        .find(processingResult -> processingResult.isResult() == false);
+        var resultList = testList
+                .map(anyServiceList::serviceCall) // it returns false for the first three calls, true for the rest
+                .find(processingResult -> !processingResult.isSuccessful());
 
-    verify(anyServiceStream, times(3)).serviceCall(any()); // result of implementation Stream as lazy linked list
-    verify(anyServiceList, times(6)).serviceCall(any());
+        verify(anyServiceStream, times(3)).serviceCall(any()); // result of implementation Stream as lazy linked list
+        verify(anyServiceList, times(6)).serviceCall(any());
 
-    assertEquals(Some(pr3), resultStream);
-    assertEquals(Some(pr3), resultList);
-}
+        assertEquals(Some(pr3), resultStream);
+        assertEquals(Some(pr3), resultList);
+    }
 ```
 
-One might observe that lazy implementation of Stream class causes that anyServiceStream.serviceCall(pr)
-will be called as many times as needed to fulfill find() condition. 
-This is not the case for the List - anyServiceList.serviceCall() will be executed as many times as there are elements in testList.
-
-Unit tests showing not only find() behavior but also other mentioned methods can be found
+One might observe that lazy implementation of ```Stream``` class causes that ```anyServiceStream::serviceCall```
+will be called as many times as needed to fulfill ```find()``` condition. 
+This is not the case for the ```List``` - ```anyServiceList::serviceCall``` will be executed as many times as there are elements in ```testList```.
+Unit tests showing not only ```find()``` behavior but also other mentioned methods can be found
 [here](./code-examples/src/test/java/com/pbroda/codesnippets/vavr/LoopBasics.java).
 
 Now it is time for our example. 
@@ -172,7 +170,7 @@ Unit tests not only assure us the functionality is correct, but also allow us wi
 So our first version might look like: 
 ```
 @Value
-class ProcessingPipeline {
+class ProcessingPipelineBeforeRefactoring {
 
     private final WarehouseService warehouseService;
     private final InventoryService inventoryService;
@@ -189,12 +187,12 @@ class ProcessingPipeline {
 
             availableItemsResponse = fetchResult.get();
 
-            var publishResult = inventoryService.publishAvailableItems(availableItemsResponse.getItems());
+            var publishResult = inventoryService.publishAvailableItems(availableItemsResponse.items());
             if (publishResult.isLeft()) {
                 return Either.left(publishResult.getLeft());
             }
 
-        } while (availableItemsResponse.getHasMore() == true);
+        } while (availableItemsResponse.hasMore());
         return Either.right(true);
     }
 }
@@ -207,7 +205,7 @@ which terminates the loop:
 
 How to solve the latter? It would be no problem if the condition ending the loop was based on the result of the second
 call. That gives us a hint that we should make it this way - i.e. we should keep aside the result of the first call,
-perform the second call, and return both together. We use Tuple to achieve that:
+perform the second call, and return both together. We use ```Tuple``` to achieve that:
 
 ```
 @Value
@@ -220,7 +218,7 @@ class ProcessingPipeline {
         return Stream.continually(() -> fetchAndPublishAvailableItems())
                 .find(this::isLastPage)
                 .get()
-                .map(__ -> true);
+                .map(ignore -> true);
     }
 
     private Either<Throwable, Tuple2<Boolean, Boolean>> fetchAndPublishAvailableItems() {
@@ -229,8 +227,8 @@ class ProcessingPipeline {
     }
 
     private Either<Throwable, Tuple2<Boolean, Boolean>> publishAvailableItems(AvailableItemsResponse itemsResponse) {
-        return inventoryService.publishAvailableItems(itemsResponse.getItems())
-                .map(published -> Tuple.of(published, itemsResponse.getHasMore()));
+        return inventoryService.publishAvailableItems(itemsResponse.items())
+                .map(published -> Tuple.of(published, itemsResponse.hasMore()));
     }
 
     private Boolean isLastPage(Either<Throwable, Tuple2<Boolean, Boolean>> fetchAndPublishResult) {
@@ -261,7 +259,7 @@ Example signature of such method would be:
 ```
 public static <T> Either<Throwable, T> logInfo(T rightValue, String message) {...}
 ```
-and then plugged into the pipeline using map() instead of peek().
+Because of the returned value, it needs to be plugged into the pipeline using ```map()``` instead of ```peek()```.
 ```
 .map(value -> logInfo(value, "log message"))
 ```
@@ -269,8 +267,8 @@ and then plugged into the pipeline using map() instead of peek().
 I would rather advise splitting such method into two parts: just logging and the rest with side effects.
 Apart from sticking to single responsibility rule, it would be great to have methods to log all levels (info, debug, error, etc.)
 in a consistent way.
-And that becomes hard for writing logError() method.
-LogError() method is supposed to log exceptions, but it would be plausible that logError() itself would result in an exception.
+And that becomes hard for writing ```logError()``` method.
+```LogError()``` method is supposed to log exceptions, but it would be plausible that ```logError()``` itself would result in an exception.
 It would be still feasible to code it, with for example help of 'suppressed' exceptions, but one might unnecessarily
 end up here with an overcomplicated code.
 
@@ -283,14 +281,14 @@ Should any translation of an error be needed at any stage of the pipeline, then 
 .mapLeft(err -> translateError(err))
 ```
 
-What is more, I also consider a good practice wrapping the starting point of an application with Try:
+What is more, I also consider a good practice wrapping the starting point of an application with ```Try```:
 ```
 public static void main(String[] args) {
     Try.of(() -> startApplication())
-        .onFailure(t -> logError(t, "Service failuer"))
+        .onFailure(t -> logError(t, "Service failure"))
 }
 ```
-so that we have at least a chance to log all exceptions not caught by our more granular instances of Try.of().
+so that we have at least a chance to log all exceptions not caught by our more granular instances of ```Try.of()```.
 
 ## Other aspects - with or without ifs?
 Both Java Streams and Vavr allow us to remove ifs from the code completely.
@@ -313,8 +311,7 @@ public boolean filter2(String label) {
     return Option.of(label)
             .map(String::toUpperCase)
             .filter(allowedLabels::contains)
-            .map(__ -> true)
-            .getOrElse(false);
+            .isDefined();
 }
 ```
 
@@ -335,4 +332,4 @@ All three methods (filter1, filter2 and filter3) with unit tests can be found
 
 # Summary
 The case study presented above should enable the reader to write Java microservices in a functional style using Vavr.
-It may also serve as proof that it is not necessary to even mention (in)famous 'm-word' to talk about FP usage in practice!
+It may also serve as proof that it is not necessary to bring any of the advanced FP-related terminologies to talk about FP usage in practice!

@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 @Value
 class ProcessingResult {
     private final int id;
-    private final boolean result;
+    private final boolean successful;
 }
 
 class AnyService {
@@ -63,15 +63,13 @@ public class LoopBasics {
 
     @Test
     void testTakeWhile() {
-        var resultStream = testStream.map(
-                pr -> anyServiceStream.serviceCall(pr)
-            )
-            .takeWhile(processingResult -> processingResult.isResult());
+        var resultStream = testStream
+                .map(anyServiceStream::serviceCall)
+                .takeWhile(processingResult -> processingResult.isSuccessful());
 
-        var resultList = testList.map(
-                pr -> anyServiceList.serviceCall(pr)
-            )
-            .takeWhile(processingResult -> processingResult.isResult());
+        var resultList = testList
+                .map(anyServiceList::serviceCall)
+                .takeWhile(processingResult -> processingResult.isSuccessful());
 
         verify(anyServiceStream, times(1)).serviceCall(any()); // result of implementation Stream as lazy linked list
         verify(anyServiceList, times(6)).serviceCall(any());
@@ -82,15 +80,13 @@ public class LoopBasics {
 
     @Test
     void testDropWhile() {
-        var resultStream = testStream.map(
-                pr -> anyServiceStream.serviceCall(pr)
-            )
-            .dropWhile(processingResult -> processingResult.isResult());
+        var resultStream = testStream
+                .map(anyServiceStream::serviceCall)
+                .dropWhile(processingResult -> processingResult.isSuccessful());
 
-        var resultList = testList.map(
-                pr -> anyServiceList.serviceCall(pr)
-            )
-            .dropWhile(processingResult -> processingResult.isResult());
+        var resultList = testList
+                .map(anyServiceList::serviceCall)
+                .dropWhile(processingResult -> processingResult.isSuccessful());
 
         verify(anyServiceStream, times(3)).serviceCall(any()); // result of implementation Stream as lazy linked list
         verify(anyServiceList, times(6)).serviceCall(any());
@@ -101,15 +97,13 @@ public class LoopBasics {
 
     @Test
     void testFind() {
-        var resultStream = testStream.map(
-                pr -> anyServiceStream.serviceCall(pr)
-            )
-            .find(processingResult -> processingResult.isResult() == false);
+        var resultStream = testStream
+                .map(anyServiceStream::serviceCall) // it returns false for the first three calls, true for the rest
+                .find(processingResult -> !processingResult.isSuccessful());
 
-        var resultList = testList.map(
-                pr -> anyServiceList.serviceCall(pr)
-            )
-            .find(processingResult -> processingResult.isResult() == false);
+        var resultList = testList
+                .map(anyServiceList::serviceCall) // it returns false for the first three calls, true for the rest
+                .find(processingResult -> !processingResult.isSuccessful());
 
         verify(anyServiceStream, times(3)).serviceCall(any()); // result of implementation Stream as lazy linked list
         verify(anyServiceList, times(6)).serviceCall(any());
@@ -127,7 +121,7 @@ public class LoopBasics {
                 .thenReturn(Either.right(pr3));
 
         Stream.continually(() -> anyService.serviceCall())
-                .find(result -> result.isRight() && result.get().isResult() == false);
+                .find(result -> result.isRight() && !result.get().isSuccessful());
 
         verify(anyService, times(3)).serviceCall();
     }
