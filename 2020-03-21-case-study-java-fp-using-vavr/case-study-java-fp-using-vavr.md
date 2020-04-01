@@ -1,14 +1,14 @@
 # Case study: Java functional programming using Vavr
 
-[Vavr](https://vavr.io) is a functional library for Java 8+ that provides persistent data types and functional control structures. 
+*TL;DR;* This post is aimed mainly at Java programmers who haven't really had a chance to write their applications in a functional style, not even in other languages.
+It is based on [Vavr](https://vavr.io) which is a popular functional library for Java 8+ and assumes basic familiarity with it.
+Presented analysis should be seen as additional reading material to both Vavr's documentation and books/tutorials on Java functional programming (FP).
+However, to not scare the reader off - a basic understanding of FP concepts like immutability or pure functions is sufficient.
 
-Most Vavr tutorials show how to use Vavr primitives but they do not provide intuition on how to write whole applications.
+What is the motivation behind this writing this post?
+**Most Vavr tutorials show how to use Vavr primitives but they do not provide intuition on how to write whole applications.**
 This is something to be addressed here, by means of examining some of the typical aspects of writing microservices.
 The provided analysis is based on an example that has its roots in professional programming reality.
-
-Please note that this post is neither introduction to functional programming (FP) nor Vavr tutorial.
-Ideally, the reader should have been already exposed to Vavr in one way or another (at least read the documentation).
-A very basic understanding of FP concepts like immutability or pure functions is sufficient.
 
 # Visualising programs as pipelines
 Before jumping into the promised case study, let's try to plant the seed of the intuition to be developed.
@@ -34,7 +34,7 @@ The left example shows a purely functional program, meaning none of the pipeline
 It is hard to imagine that such a program could be of any use - no side effects means no printing result on the screen/
 writing to a file, no possibility to interactively input parameters during execution, etc.  
 
-The example on the right is more interesting - apart from doing purely FP-style calculations,
+The example on the right is more interesting - apart from doing purely FP style calculations,
 it reads user input, calls database service and can display some results on the screen.
 Should any error occur, it will be wrapped (with the help of Vavr) into a proper type and returned (not thrown) from a method.
 The pipeline, assembled from Vavr primitives, takes care of proper error propagation to the place where the program begins.
@@ -78,9 +78,9 @@ All external services are exposed through REST, but what truly matters is that c
 Having understood the flow of the service, we are ready to analyze some of its crucial parts to learn how Vavr helps in achieving that.
 
 ## Initial considerations
-Vavr equips us with two ways of building pipelines: classes Either and Try.
-Since Try might be treated as a specific case of Either, for the needs of this case study it does not really matter which one we choose.
-Let's choose Either and base all examples on it.
+Vavr equips us with two ways of building pipelines: classes ```Either``` and ```Try```.
+Since ```Try``` might be treated as a specific case of ```Either```, for the needs of this case study it should not really matter which one we choose.
+However, the real microservice we are going to study was based on ```Either```, so let's base all examples on it.
 
 ## Aspect 1 - external services' calls
 External services' calls produce side effects. In particular, they might throw exceptions.
@@ -88,8 +88,8 @@ To 'plug' them into our pipelines, such calls need to be appropriately wrapped.
 
 Let's take a look at the class responsible for publishing events to the external endpoint through REST.
 It shows how to wrap an HTTP call which might throw an exception.
-Should an exception be thrown, it will be wrapped into Try, then translated to Either.Left and returned from the method.
-(note: of course, when you base your pipeline on Try, conversion to Either is not necessary).
+Should an exception be thrown, it will be wrapped into ```Try```, then translated to ```Either.Left``` and returned from the method.
+(note: of course, when you base your pipeline on ```Try```, conversion to ```Either``` is not necessary).
 
 Let's assume external HTTP calls are done by client implementing the following interface:
 ```
@@ -160,7 +160,7 @@ Unit tests showing not only ```find()``` behavior but also other mentioned metho
 [here](./code-examples/src/test/java/com/pbroda/codesnippets/vavr/LoopBasics.java).
 
 Now it is time for our example. 
-Assume, we want to call two services in a loop (this correspond to the bigger rectangle on the picture)
+Assume, we want to call two services in a loop (this correspond to the bigger rectangle on the picture).
 We call them consecutively in such a way that the result of the first call is fed to the second call.
 This proceeds in a loop until there is a certain condition met, based on the results of the first call.
 Let's repeat as it is important - first call, not the second one.
@@ -198,7 +198,7 @@ class ProcessingPipelineBeforeRefactoring {
 }
 ```   
 
-In order to refactor ProcessingPipeline class above we need to deal with two problems, both related to the condition
+In order to refactor ```ProcessingPipeline``` class above we need to deal with two problems, both related to the condition
 which terminates the loop:  
 - it is based on the result of a service call - we have already covered it at the beginning of this paragraph,  
 - it is based on the result of the first service call, as already stressed.
@@ -273,7 +273,7 @@ It would be still feasible to code it, with for example help of 'suppressed' exc
 end up here with an overcomplicated code.
 
 ## Aspect 4 - exceptions
-Exceptions simply travel through the pipeline as Either.Left.
+Exceptions simply travel through the pipeline as ```Either.Left```.
 As they make their way towards the end of the pipeline, there might be a need for translating them.
 In our example, we are in a very comfortable situation in which we allow them to propagate to the very end and log them there - just in one place.
 Should any translation of an error be needed at any stage of the pipeline, then simply:
@@ -327,9 +327,9 @@ public Either<Throwable, Boolean> filter3(String label) {
 }
 ```
 
-All three methods (filter1, filter2 and filter3) with unit tests can be found
+All three methods ```filter1()```, ```filter2()``` and ```filter3()``` with unit tests can be found
 [here](./code-examples/src/test/java/com/pbroda/codesnippets/vavr/WithOrWithoutIfs.java).
 
 # Summary
 The case study presented above should enable the reader to write Java microservices in a functional style using Vavr.
-It may also serve as proof that it is not necessary to bring any of the advanced FP-related terminologies to talk about FP usage in practice!
+It may also serve as proof that it is not necessary to bring any of the advanced FP related terminologies to talk about FP usage in practice!
