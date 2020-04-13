@@ -41,8 +41,7 @@ class LabelFilter {
     public boolean filter2(String label) {
         return Option.of(label)
                 .map(String::toUpperCase)
-                .filter(allowedLabels::contains)
-                .isDefined();
+                .exists(allowedLabels::contains);
     }
 
     public Either<Throwable, Boolean> filter3(String label) {
@@ -53,7 +52,7 @@ class LabelFilter {
 }
 
 @ExtendWith(MockitoExtension.class)
-public class WithOrWithoutIfs {
+public class WithOrWithoutIfsTest {
 
     private AllowedLabelsService allowedLabelsServiceImpl;
     private LabelFilter labelFilter;

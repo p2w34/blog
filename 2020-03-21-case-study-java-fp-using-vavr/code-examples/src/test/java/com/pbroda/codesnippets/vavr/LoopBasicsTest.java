@@ -37,7 +37,7 @@ interface AnyInterface {
 }
 
 @ExtendWith(MockitoExtension.class)
-public class LoopBasics {
+public class LoopBasicsTest {
 
     Stream<ProcessingResult> testStream;
     List<ProcessingResult> testList;

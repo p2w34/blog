@@ -36,7 +36,7 @@ class InventoryPublisher {
 }
 
 @ExtendWith(MockitoExtension.class)
-public class ExternalServiceCall {
+public class ExternalServiceCallTest {
 
     private InventoryPublisherClient inventoryPublisherClient;
     private InventoryPublisher inventoryPublisher;
