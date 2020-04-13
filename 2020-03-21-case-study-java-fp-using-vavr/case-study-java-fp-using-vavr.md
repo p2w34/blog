@@ -5,7 +5,7 @@ It is based on [Vavr](https://vavr.io) which is a popular functional library for
 Presented analysis should be seen as additional reading material to both Vavr's documentation and books/tutorials on Java functional programming (FP).
 However, to not scare the reader off, a basic understanding of FP concepts like immutability or pure functions is sufficient.
 
-What is the motivation behind this writing this post?
+What is the motivation behind writing this post?
 **Most Vavr tutorials show how to use Vavr primitives but they do not provide intuition on how to write whole applications.**
 This is something to be addressed here, by means of examining some of the typical aspects of writing microservices.
 The provided analysis is based on an example that has its roots in professional programming reality.
