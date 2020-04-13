@@ -1,9 +1,9 @@
 # Case study: Java functional programming using Vavr
 
-*TL;DR;* This post is aimed mainly at Java programmers who haven't really had a chance to write their applications in a functional style, not even in other languages.
-It is based on [Vavr](https://vavr.io) which is a popular functional library for Java 8+ and assumes basic familiarity with it.
+_TL;DR;_ This post is aimed mainly at Java programmers who haven't really had a chance to write their applications in a functional style, not even in other languages.
+It is based on [Vavr](https://vavr.io) which is a popular functional library for Java 8+.
 Presented analysis should be seen as additional reading material to both Vavr's documentation and books/tutorials on Java functional programming (FP).
-However, to not scare the reader off - a basic understanding of FP concepts like immutability or pure functions is sufficient.
+However, to not scare the reader off, a basic understanding of FP concepts like immutability or pure functions is sufficient.
 
 What is the motivation behind this writing this post?
 **Most Vavr tutorials show how to use Vavr primitives but they do not provide intuition on how to write whole applications.**
@@ -24,13 +24,13 @@ Have a look at the pictures below:
 
 ![example_flows](images/example_flows.png)
 
-They both present programs as pipelines. A single arrow should be interpreted as a single computational stage (for example a single method),
+They both present programs as pipelines. An arrow should be interpreted as a computational stage (for example a single method),
 whereas the colors mean:  
 - green - purely functional (no side effects),  
 - orange - with side effects,  
 - red - the flow of errors
 
-The left example shows a purely functional program, meaning none of the pipeline stages performs any side effects.
+The example on the left shows a purely functional program, meaning none of the pipeline stages performs any side effects.
 It is hard to imagine that such a program could be of any use - no side effects means no printing result on the screen/
 writing to a file, no possibility to interactively input parameters during execution, etc.  
 
@@ -62,16 +62,15 @@ The exact algorithm describing the service functionality is as follows:
 - get latest 'polling status' from S3
 - use it to compose query to the database
 - knowing that database response might consist of multiple pages, for each page (large loop on the picture):
-- request access token and (small loop):
-- publish to external endpoint (using access token) all entries from a single page, one at a time;
+    - request access token and (small loop):
+        - publish to external endpoint (using access token) all entries from a single page, one at a time;
 after each such successful operation, update 'polling status' on S3.
 
 This example is based on a real microservice.
 It is built without any frameworks apart from Guice to provide dependency injection.
 To avoid overcomplication, everything happens in one thread.
-Additionally, error while contacting any of the external services means the pipeline breaks.
-(OK, some failed HTTP calls might be retried two or three times, but if this fails the pipeline breaks.
-This is acceptable - thanks to storing 'polling status' on S3, the next run will continue from the place where previously broke).
+Additionally, an error while contacting any of the external services means the pipeline breaks
+(this is acceptable - thanks to storing 'polling status' on S3, the next run will continue from the place it where previously broke).
 
 All external services are exposed through REST, but what truly matters is that contacting them is a side effect.
 
@@ -83,8 +82,8 @@ Since ```Try``` might be treated as a specific case of ```Either```, for the nee
 However, the real microservice we are going to study was based on ```Either```, so let's base all examples on it.
 
 ## Aspect 1 - external services' calls
-External services' calls produce side effects. In particular, they might throw exceptions.
-To 'plug' them into our pipelines, such calls need to be appropriately wrapped.
+Calls to the external services produce side effects. In particular, they might throw exceptions.
+To plug them into our pipelines, such calls need to be appropriately wrapped.
 
 Let's take a look at the class responsible for publishing events to the external endpoint through REST.
 It shows how to wrap an HTTP call which might throw an exception.
@@ -125,7 +124,7 @@ We show how to write a loop where the number of iterations is determined by the 
 Let's talk about some basics first.  
 Vavr equips us with tools one may find valuable writing such loops.
 These are primitives like ```Stream.continually()```, ```takeWhile()```, ```dropWhile()``` and ```find()```.
-And their 'brothers and sister' (```takeUntil()``` etc.).  
+And their 'brothers and sisters' (```takeUntil()``` etc.).  
 
 **Now comes a very important thing, crucial to understanding this paragraph.
 The io.vavr.collection.Stream implementation is a lazy linked list.**
@@ -160,13 +159,13 @@ Unit tests showing not only ```find()``` behavior but also other mentioned metho
 [here](./code-examples/src/test/java/com/pbroda/codesnippets/vavr/LoopBasics.java).
 
 Now it is time for our example. 
-Assume, we want to call two services in a loop (this correspond to the bigger rectangle on the picture).
+Assume we want to call two services in a loop (this corresponds to the bigger rectangle on the picture).
 We call them consecutively in such a way that the result of the first call is fed to the second call.
-This proceeds in a loop until there is a certain condition met, based on the results of the first call.
+This proceeds in a loop until a certain condition is met, based on the results of the first call.
 Let's repeat as it is important - first call, not the second one.
 
 If it is not obvious how to write such a loop, we might first try to write it as a kind of pseudo-code presented below.
-Unit tests not only assure us the functionality is correct, but also allow us with experimenting on the way to get a nice result.
+Unit tests not only assure us the functionality is correct, but also allow to experiment on the way to get the desired result.
 So our first version might look like: 
 ```
 @Value
@@ -201,7 +200,7 @@ class ProcessingPipelineBeforeRefactoring {
 In order to refactor ```ProcessingPipeline``` class above we need to deal with two problems, both related to the condition
 which terminates the loop:  
 - it is based on the result of a service call - we have already covered it at the beginning of this paragraph,  
-- it is based on the result of the first service call, as already stressed.
+- another service call follows in each iteration after the first service call, as already stressed.
 
 How to solve the latter? It would be no problem if the condition ending the loop was based on the result of the second
 call. That gives us a hint that we should make it this way - i.e. we should keep aside the result of the first call,
@@ -223,7 +222,7 @@ class ProcessingPipeline {
 
     private Either<Throwable, Tuple2<Boolean, Boolean>> fetchAndPublishAvailableItems() {
         return warehouseService.fetchAvailableItems()
-                .flatMap(itemsResponse -> publishAvailableItems(itemsResponse));
+                .flatMap(this::publishAvailableItems);
     }
 
     private Either<Throwable, Tuple2<Boolean, Boolean>> publishAvailableItems(AvailableItemsResponse itemsResponse) {
@@ -269,19 +268,19 @@ Apart from sticking to single responsibility rule, it would be great to have met
 in a consistent way.
 And that becomes hard for writing ```logError()``` method.
 ```LogError()``` method is supposed to log exceptions, but it would be plausible that ```logError()``` itself would result in an exception.
-It would be still feasible to code it, with for example help of 'suppressed' exceptions, but one might unnecessarily
+It would be still feasible to code it, with for example help of suppressed exceptions, but one might unnecessarily
 end up here with an overcomplicated code.
 
 ## Aspect 4 - exceptions
 Exceptions simply travel through the pipeline as ```Either.Left```.
 As they make their way towards the end of the pipeline, there might be a need for translating them.
 In our example, we are in a very comfortable situation in which we allow them to propagate to the very end and log them there - just in one place.
-Should any translation of an error be needed at any stage of the pipeline, then simply:
+Should any translation (rethrowing) of an error be needed at any stage of the pipeline, then simply:
 ```
-.mapLeft(err -> translateError(err))
+.mapLeft(this::translateError)
 ```
 
-What is more, I also consider a good practice wrapping the starting point of an application with ```Try```:
+What is more, I also consider it a good practice to wrap the starting point of the application into ```Try```:
 ```
 public static void main(String[] args) {
     Try.of(() -> startApplication())
@@ -310,8 +309,7 @@ one might refactor it to:
 public boolean filter2(String label) {
     return Option.of(label)
             .map(String::toUpperCase)
-            .filter(allowedLabels::contains)
-            .isDefined();
+            .exists(allowedLabels::contains);
 }
 ```
 
@@ -332,4 +330,4 @@ All three methods ```filter1()```, ```filter2()``` and ```filter3()``` with unit
 
 # Summary
 The case study presented above should enable the reader to write Java microservices in a functional style using Vavr.
-It may also serve as proof that it is not necessary to bring any of the advanced FP related terminologies to talk about FP usage in practice!
+It may also serve as proof that it is not necessary to bring up any of the advanced FP related terminologies to talk about FP usage in practice!
