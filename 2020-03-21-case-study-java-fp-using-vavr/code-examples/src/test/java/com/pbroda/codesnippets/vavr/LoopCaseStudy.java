@@ -91,7 +91,7 @@ class ProcessingPipeline {
 
     private Either<Throwable, Tuple2<Boolean, Boolean>> fetchAndPublishAvailableItems() {
         return warehouseService.fetchAvailableItems()
-                .flatMap(this::publishAvailableItems);
+                .flatMap(itemsResponse -> publishAvailableItems(itemsResponse));
     }
 
     private Either<Throwable, Tuple2<Boolean, Boolean>> publishAvailableItems(AvailableItemsResponse itemsResponse) {
@@ -106,7 +106,7 @@ class ProcessingPipeline {
 }
 
 @ExtendWith(MockitoExtension.class)
-public class LoopCaseStudyTest {
+public class LoopCaseStudy {
 
     private Either<Throwable, AvailableItemsResponse> air1 = Either.right(AvailableItemsResponse.builder().hasMore(true).build());
     private Either<Throwable, AvailableItemsResponse> air2 = Either.right(AvailableItemsResponse.builder().hasMore(false).build());
