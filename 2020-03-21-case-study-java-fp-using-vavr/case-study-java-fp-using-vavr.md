@@ -61,8 +61,8 @@ The exact algorithm describing the service functionality is as follows:
 - use it to compose query to the database
 - knowing that database response might consist of multiple pages, for each page (large loop on the picture):
     - request access token and (small loop):
-        - publish to external endpoint (using access token) all entries from a single page, one at a time;
-after each such successful operation, update _polling status_ on S3.
+        - publish to external endpoint (using access token) all entries from a single page, one at a time
+        - after each such successful operation, update _polling status_ on S3.
 
 This example is based on a real microservice.
 It is built without any frameworks apart from Guice to provide dependency injection.
