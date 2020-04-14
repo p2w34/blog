@@ -22,7 +22,7 @@ class ItemData {
 }
 
 interface InventoryPublisherClient {
-    Boolean publishItem(ItemData item);
+    Boolean publishItem(ItemData item) throws RuntimeException;
 }
 
 @Value
