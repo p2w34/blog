@@ -18,14 +18,14 @@ I hope you find this article educational.
 
 If you hear about NOSTR for the first time, you should read some basics before jumping into the rest of the article.
 Not to repeat what has been already written, you may want to familiarize yourself with the following:
-1. https://github.com/nostr-protocol/nips for formal description, NIPS-01 should suffice for the first read.
+1. https://github.com/nostr-protocol/nips for formal description, NIP-01 should suffice for the first read.
 2. https://github.com/nostr-protocol/nostr for a more human-friendly explanation.
 3. https://github.com/aljazceru/awesome-nostr to see a list of existing clients/servers (pardon, relays in NOSTR parlance).
 I used a decent web browser client: [Coracle](https://coracle.social/notes/network).
 Worth trying is an iOS [Damus](https://twitter.com/damusapp) client, which is in test flight at the time this post is being written.
 
 ## Reading posts
-As a starting point let's try to read any post. From NIPS-01 we see that we need to send a `"REQ"` event to a relay.
+As a starting point let's try to read any post. From NIP-01 we see that we need to send a `"REQ"` event to a relay.
 Communication is done using WebSockets. If you are not familiar with WebSockets, don't worry.
 See it as an alternative to HTTPS. The difference is that WebSockets allow for real-time, bidirectional communication between a client and server.
 The easiest way to experiment with them is to use any online tool, like [websocketking](https://websocketking.com/).
@@ -44,7 +44,7 @@ Let's take the simplest possible request:
 and send it out:
 ![read_1](images/read_1.png)
 
-It doesn't work, but it is a good starting point. Based on the error and NIPS-01 you can try to figure out the rest yourself.
+It doesn't work, but it is a good starting point. Based on the error and NIP-01 you can try to figure out the rest yourself.
 After a few trials and errors, the simples request seems to be:
 ```
 ["REQ","0",{}]
@@ -137,12 +137,12 @@ When we talk about the complexity of the protocol - **YES!**.
 When we talk about possibilities - NO. **Definitively NO!**
 
 By far, we have investigated only the basic protocol functionality.
-The best way to discover its full potential is to go through the rest of NIPS.
+The best way to discover its full potential is to go through the rest of NIP.
 You will see there building blocks of contemporary social media.
 There are, among others, human-readable names (as opposed to using pub keys :-)), mentions, encryption of messages or creation of chat channels.
 
 ## Summary
-Based on just NIPS-01 you see the protocol is straightforward.
-Going through all the NIPS can be comprehended in one or two evenings.
+Based on just NIP-01 you see the protocol is straightforward.
+Going through all the NIP can be comprehended in one or two evenings.
 The ecosystem around NOSTR grows but it is still in its infancy.
 I am waiting with my fingers crossed to see how NOSTR's fate and that of its competitors will unfold.
