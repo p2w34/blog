@@ -58,7 +58,7 @@ To see just the notes describing users (kind of list of users for this relay):
 
 ## Writing posts
 Writing is more complicated, but only a bit. The reasons are:
-1. You do not need to be registered, although you have to identify yourself with a public key. The private key is used to encrypt the note.
+1. You do not need to be registered, although you have to identify yourself with a public key. The private key is used to sign events.
 2. Some relays require a subscription for writing to them ([Coracle](https://coracle.social/notes/network) requires paying a Lightning invoice).
    It did not take long to find a free relay: `wss://nostr.pleb.network`.
 3. Events need to be signed. To do that, let's:  
