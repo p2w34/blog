@@ -1,5 +1,7 @@
 # My blog
 
+### [2023-03-08] [Decentralized development of decentralized protocols](./2023-03-08-decentralized-development-of-decentralized-protocols/decentralized-development-of-decentralized-protocols.md)
+
 ### [2023-02-11] [Tinkering with the NOSTR protocol](./2023-02-11-tinkering-with-the-nostr-protocol/tinkering-with-the-nostr-protocol.md)
 
 ### [2020-03-21] [Case study: Java functional programming using Vavr](./2020-03-21-case-study-java-fp-using-vavr/case-study-java-fp-using-vavr.md)
