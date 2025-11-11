@@ -1,18 +1,21 @@
-# mObywatel XAdES Signature Verification
+# mObywatel XAdES signature verification
 
 The [mObywatel](https://www.gov.pl/web/mobywatel) platform is a Polish government service that provides access to a [trusted signature](https://www.gov.pl/web/gov/podpisz-dokument-elektronicznie-wykorzystaj-podpis-zaufany)
 for people who have a Trusted Profile (Profil Zaufany) — a Polish electronic identity system available to individuals with a PESEL number (the national identification number).
 After a document is signed, it can be sent to other people so that they can verify it, using the mObywatel app as well.
 One of the available formats is [XAdES](https://en.wikipedia.org/wiki/XAdES) which is the subject to this post.
 
-The motivation for this post was to see whether ChatGPT could handle the task of verifying XAdES signatures step by step — something the author has been using as a personal “test challenge for ChatGPT” ever since ChatGPT became popular.
-With each new version, the author spent some time trying to get ChatGPT to complete the task correctly — and for a long while, it simply couldn’t. The thing involves serveral steps which are de facto standard, however it was too much for earlier ChatGPT versions.
-It turned out to be a nice challenge, since such a detailed, step-by-step walkthrough was nowhere to be found on the Polish internet (at least as far as the author could tell — and the internet is vast).
-Only now, with the paid version of ChatGPT-5, did the model finally manage to produce a working solution — though not instantly, but after a series of increasingly precise prompts.
-The scripts presented here were therefore written with the help of ChatGPT (v5 paid version - 'thinking mode').
+The motivation for this post was to see whether ChatGPT could handle the task of verifying XAdES signatures step by
+step — something the author has been using as a personal “test challenge for ChatGPT” ever since the tool became popular.
+With each new version, the author spent some time trying to get ChatGPT to complete the task correctly — and for a long while, it simply couldn’t.
+Already with the very first prompt, one can try to script the whole thing — ChatGPT gets the steps right, but there are errors in the generated scripts.
+Then one has to step in, try the suggested steps manually, and ask for corrections. As the final step, one still needs to stitch all those pieces together.
+It turned out to be an interesting challenge, since such a detailed, step-by-step walkthrough was nowhere to be found on the Polish internet (at least as far as the author could tell — and the internet is vast).
+Only now, with the paid version of ChatGPT-5, did the model finally manage to produce a working solution — though not instantly, but after a sometimes frustrating conversation.
+The scripts presented here were therefore written with the help of ChatGPT (v5, paid version — “thinking mode”).
 
 The additional value for this post is **educational** one.
-Its value lies in presenting the **entire process step by step**, using only simple command‑line tools.
+Its value lies in presenting the scripts showing **the entire verification process step by step**, using only simple command‑line tools.
 For commercial use cases—such as verifying many files at once—the reader will likely choose ready to use libraries (commercial).
 Indeed, the mObywatel app operates only on single files, and API access is not public (having the status of a state institution certainly helps).
 
@@ -20,6 +23,7 @@ Indeed, the mObywatel app operates only on single files, and API access is not p
 
 Given the number of steps involved, this post takes a minimalist approach.
 Particular attention should be paid to the sections that compute digests, as they are the most sensitive—and the most frustrating—to implement by yourself.
+This is exactly where previous versions of ChatGPT were failing.
 
 ## Tools
 The author used:
